@@ -12,7 +12,7 @@ This project is built to run entirely inside an isolated Docker container using 
 ## Key Features
 * **PQC Handshakes:** Kyber768 Key Encapsulation.
 * **PQC Verification:** ML-DSA-65 Digital Signatures.
-- Work in progress (hybrid apporach PQC/JWT auth).
+# Work in progress (hybrid apporach PQC/JWT auth).
 * **Rate Limiting:** IP-based throttling via `slowapi` to prevent DDoS and compute exhaustion.
 * **Role-Based Auth:** JWT-secured endpoints separating standard users from Admins.
 
