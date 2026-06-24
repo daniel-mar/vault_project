@@ -1,0 +1,22 @@
+{
+    "name": "Quantum-Cryptography-Lab",
+    "forwardPorts": [8000],
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": ["ms-python.python"],
+            "settings": {
+                "python.defaultInterpreterPath": "/home/oqs/venv/bin/python",
+                "python.testing.pytestEnabled": true,
+                "python.testing.unittestEnabled": false
+            }
+        }
+    },
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/home/oqs/vault_project,type=bind"
+    ],
+    "workspaceFolder": "/home/oqs/vault_project",
+    "postCreateCommand": "/bin/bash -c 'source /home/oqs/venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt'"
+}
