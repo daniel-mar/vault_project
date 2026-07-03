@@ -4,9 +4,15 @@ import oqs
 
 # Import the app from your new modular structure
 from app.main import app
+from app.core.config import SESSIONS, USERS, BLACKLIST
 
 client = TestClient(app)
 
+
+@pytest.fixture(autouse=True)
+def reset_state():
+    USERS.clear()
+    BLACKLIST.clear()
 # ==========================================
 # --- SUCCESS TESTS (Happy Paths) ---
 # ==========================================
@@ -135,3 +141,22 @@ def test_cryptographic_error_handler():
     # our handler safely sanitizes it to a 400 to prevent data leakage.
     assert response.status_code == 400
     assert response.json()["detail"] == "Verification processing failed"
+
+
+# ==========================================
+# --- USER ROUTES ---
+# ==========================================
+def test_register_and_login_flow():
+    # 1. Register
+    res = client.post("/api/v1/users/register", json={"username": "testuser", "password": "password123", "role": "user"})
+    if res.status_code == 422:
+        print("\n--- 422 VALIDATION ERROR ---")
+        print(res.json())
+        print("----------------------------\n")
+    assert res.status_code == 200
+    
+    # 2. Login (Note: OAuth2 requires form data, not JSON)
+    res_login = client.post("/api/v1/users/login", data={"username": "testuser", "password": "password123"})
+    assert res_login.status_code == 200
+    token = res_login.json()["access_token"]
+    assert token is not None
