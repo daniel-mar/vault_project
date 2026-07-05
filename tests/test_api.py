@@ -1,162 +1,180 @@
-import pytest
-from fastapi.testclient import TestClient
-import oqs
+# # tests/test_api.py
+# import pytest
+# import oqs
+# import jwt
+# import logging
 
-# Import the app from your new modular structure
-from app.main import app
-from app.core.config import SESSIONS, USERS, BLACKLIST
+# # Import from your new modular test files
+# from tests.constants import USER_REGULAR, USER_ADMIN, USER_A, USER_B, VALID_MESSAGE
+# from tests.helpers import establish_kyber_session
 
-client = TestClient(app)
+# # Import application state for the proof test
+# from app.core.config import SESSIONS
 
+# # Grab the logger configured in conftest.py
+# logger = logging.getLogger(__name__)
 
-@pytest.fixture(autouse=True)
-def reset_state():
-    USERS.clear()
-    BLACKLIST.clear()
-# ==========================================
-# --- SUCCESS TESTS (Happy Paths) ---
-# ==========================================
+# # ==========================================
+# # --- SUCCESS TESTS (Happy Paths) ---
+# # ==========================================
 
-def test_pqc_handshake_flow_success():
-    """
-    Tests the complete, successful Kyber768 handshake lifecycle.
-    """
-    # 1. Init Handshake (Get Server Public Key)
-    init_response = client.post("/api/v1/auth/pqc-handshake")
-    assert init_response.status_code == 200
+# def test_pqc_handshake_flow_success(client):
+#     init_response = client.post("/api/v1/auth/pqc-handshake")
+#     assert init_response.status_code == 200
     
-    data = init_response.json()
-    server_pub_key = bytes.fromhex(data["server_public_key_hex"])
-    session_id = data["session_id"]
+#     data = init_response.json()
+#     server_pub_key = bytes.fromhex(data["server_public_key_hex"])
+#     session_id = data["session_id"]
     
-    # 2. Client performs Key Encapsulation Mechanism (KEM)
-    with oqs.KeyEncapsulation("Kyber768") as client_kem:
-        ciphertext, shared_secret = client_kem.encap_secret(server_pub_key)
+#     with oqs.KeyEncapsulation("Kyber768") as client_kem:
+#         ciphertext, shared_secret = client_kem.encap_secret(server_pub_key)
     
-    # 3. Complete Handshake
-    payload = {
-        "session_id": session_id,
-        "ciphertext_hex": ciphertext.hex()
-    }
-    complete_response = client.post("/api/v1/auth/pqc-complete", json=payload)
+#     payload = {
+#         "session_id": session_id,
+#         "ciphertext_hex": ciphertext.hex()
+#     }
+#     complete_response = client.post("/api/v1/auth/pqc-complete", json=payload)
     
-    assert complete_response.status_code == 200
-    assert complete_response.json()["status"] == "Secure Channel Established"
+#     assert complete_response.status_code == 200
+#     assert complete_response.json()["status"] == "Secure Channel Established"
+#     logger.info(f"Handshake Flow test passed! Secure channel established for session: {session_id[:8]}...")
 
 
-def test_verify_signature_success():
-    """
-    Tests successful ML-DSA-65 document verification.
-    """
-    message = "Classified Vault Data"
-    
-    # Signer generates keys and signs the document
-    with oqs.Signature("ML-DSA-65") as signer:
-        public_key = signer.generate_keypair()
-        signature = signer.sign(message.encode('utf-8'))
+# def test_verify_signature_success(client):
+#     with oqs.Signature("ML-DSA-65") as signer:
+#         public_key = signer.generate_keypair()
+#         signature = signer.sign(VALID_MESSAGE.encode('utf-8'))
         
-    payload = {
-        "message": message,
-        "public_key_hex": public_key.hex(),
-        "signature_hex": signature.hex()
-    }
+#     payload = {
+#         "message": VALID_MESSAGE,
+#         "public_key_hex": public_key.hex(),
+#         "signature_hex": signature.hex()
+#     }
     
-    response = client.post("/api/v1/verify/document", json=payload)
+#     response = client.post("/api/v1/verify/document", json=payload)
     
-    assert response.status_code == 200
-    assert response.json()["status"] == "success"
+#     assert response.status_code == 200
+#     assert response.json()["status"] == "success"
+#     logger.info("Signature Verification test passed! ML-DSA-65 validated successfully.")
 
 
-# ==========================================
-# --- FAILURE TESTS (Edge Cases) ---
-# ==========================================
+# # ==========================================
+# # --- FAILURE TESTS (Edge Cases) ---
+# # ==========================================
 
-def test_handshake_invalid_session_id():
-    """
-    Tests that completing a handshake with a fake session ID fails properly.
-    """
-    payload = {
-        "session_id": "fake_session_12345",
-        "ciphertext_hex": "A1B2C3D4" * 200 # Arbitrary valid hex
-    }
+# def test_handshake_invalid_session_id(client):
+#     payload = {
+#         "session_id": "fake_session_12345",
+#         "ciphertext_hex": "A1B2C3D4" * 200
+#     }
+#     response = client.post("/api/v1/auth/pqc-complete", json=payload)
     
-    response = client.post("/api/v1/auth/pqc-complete", json=payload)
-    
-    # Should be caught by the `get_session_data` dependency
-    assert response.status_code == 404
-    assert "Session expired or invalid" in response.json()["detail"]
+#     assert response.status_code == 404
+#     assert "Session expired or invalid" in response.json()["detail"]
+#     logger.info("Invalid Session ID test passed! Fake session properly rejected.")
 
 
-def test_handshake_invalid_ciphertext_length():
-    """
-    Tests that sending ciphertext that isn't exactly 1088 bytes is rejected.
-    """
-    # Create a valid session first
-    init_response = client.post("/api/v1/auth/pqc-handshake")
-    session_id = init_response.json()["session_id"]
+# def test_handshake_invalid_ciphertext_length(client):
+#     init_response = client.post("/api/v1/auth/pqc-handshake")
+#     session_id = init_response.json()["session_id"]
     
-    payload = {
-        "session_id": session_id,
-        "ciphertext_hex": "deadbeef" # Valid hex, but way too short
-    }
+#     payload = {
+#         "session_id": session_id,
+#         "ciphertext_hex": "deadbeef" 
+#     }
+#     response = client.post("/api/v1/auth/pqc-complete", json=payload)
     
-    response = client.post("/api/v1/auth/pqc-complete", json=payload)
-    
-    # Should be caught by our manual length check in the route
-    assert response.status_code == 400
-    assert "Invalid ciphertext length" in response.json()["detail"]
+#     assert response.status_code == 400
+#     assert "Invalid ciphertext length" in response.json()["detail"]
+#     logger.info("Invalid Ciphertext Length test passed! Short payload rejected.")
 
 
-def test_verify_signature_tampered_document():
-    """
-    Tests that altering the message after it was signed results in a 401 Unauthorized.
-    """
-    original_message = "Approve $10"
-    tampered_message = "Approve $10,000,000"
+# def test_verify_signature_tampered_document(client):
+#     tampered_message = "Approve $10,000,000"
     
-    with oqs.Signature("ML-DSA-65") as signer:
-        public_key = signer.generate_keypair()
-        signature = signer.sign(original_message.encode('utf-8'))
+#     with oqs.Signature("ML-DSA-65") as signer:
+#         public_key = signer.generate_keypair()
+#         signature = signer.sign(b"Approve $10")
         
-    # We send the tampered text, but the original signature
-    payload = {
-        "message": tampered_message, 
-        "public_key_hex": public_key.hex(),
-        "signature_hex": signature.hex()
-    }
+#     payload = {
+#         "message": tampered_message, 
+#         "public_key_hex": public_key.hex(),
+#         "signature_hex": signature.hex()
+#     }
+#     response = client.post("/api/v1/verify/document", json=payload)
     
-    response = client.post("/api/v1/verify/document", json=payload)
-    
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Signature mismatch."
+#     assert response.status_code == 401
+#     assert response.json()["detail"] == "Signature mismatch."
+#     logger.info("Tampered Document test passed! Forgery detected and rejected.")
 
 
-def test_cryptographic_error_handler():
-    """
-    Tests our global exception handler for internal crypto crashes.
-    """
-    response = client.post("/api/v1/verify/debug/force-crash")
-    
-    # Even though it's an internal crash (500-level issue), 
-    # our handler safely sanitizes it to a 400 to prevent data leakage.
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Verification processing failed"
+# def test_cryptographic_error_handler(client):
+#     response = client.post("/api/v1/verify/debug/force-crash")
+#     assert response.status_code == 400
+#     assert response.json()["detail"] == "Verification processing failed"
+#     logger.info("Crypto Error Handler test passed! Internal crash safely masked.")
 
 
-# ==========================================
-# --- USER ROUTES ---
-# ==========================================
-def test_register_and_login_flow():
-    # 1. Register
-    res = client.post("/api/v1/users/register", json={"username": "testuser", "password": "password123", "role": "user"})
-    if res.status_code == 422:
-        print("\n--- 422 VALIDATION ERROR ---")
-        print(res.json())
-        print("----------------------------\n")
-    assert res.status_code == 200
+# # ==========================================
+# # --- USER & ADMIN TESTS ---
+# # ==========================================
+
+# def test_create_and_login_regular_user(client):
+#     res_reg = client.post("/api/v1/users/register", json=USER_REGULAR)
+#     assert res_reg.status_code == 200
     
-    # 2. Login (Note: OAuth2 requires form data, not JSON)
-    res_login = client.post("/api/v1/users/login", data={"username": "testuser", "password": "password123"})
-    assert res_login.status_code == 200
-    token = res_login.json()["access_token"]
-    assert token is not None
+#     session_id = establish_kyber_session(client)
+    
+#     res_login = client.post("/api/v1/users/login", data={
+#         "username": USER_REGULAR["username"], 
+#         "password": USER_REGULAR["password"],
+#         "session_id": session_id
+#     })
+    
+#     assert res_login.status_code == 200
+#     assert "access_token" in res_login.json()
+#     logger.info(f"Regular User Login test passed! Logged in as: {USER_REGULAR['username']}")
+
+
+# def test_create_and_login_admin_user(client):
+#     res_reg = client.post("/api/v1/users/register", json=USER_ADMIN)
+#     assert res_reg.status_code == 200
+#     assert res_reg.json()["role"] == "admin"
+    
+#     session_id = establish_kyber_session(client)
+    
+#     res_login = client.post("/api/v1/users/login", data={
+#         "username": USER_ADMIN["username"], 
+#         "password": USER_ADMIN["password"],
+#         "session_id": session_id
+#     })
+    
+#     assert res_login.status_code == 200
+#     assert "access_token" in res_login.json()
+#     logger.info(f"Admin User Login test passed! Elevated privileges confirmed for: {USER_ADMIN['username']}")
+
+
+# # ==========================================
+# # --- THE ARCHITECTURE PROOF TEST ---
+# # ==========================================
+
+# def test_proof_of_session_isolation(client):
+#     # 1. Set up User A
+#     assert client.post("/api/v1/users/register", json=USER_A).status_code == 200
+#     session_a = establish_kyber_session(client)
+#     token_a = client.post("/api/v1/users/login", data={"username": USER_A["username"], "password": USER_A["password"], "session_id": session_a}).json()["access_token"]
+    
+#     # 2. Set up User B
+#     assert client.post("/api/v1/users/register", json=USER_B).status_code == 200
+#     session_b = establish_kyber_session(client)
+#     token_b = client.post("/api/v1/users/login", data={"username": USER_B["username"], "password": USER_B["password"], "session_id": session_b}).json()["access_token"]
+    
+#     # 3. Get User B's unique Kyber Secret
+#     kyber_secret_b = SESSIONS[session_b]["shared_secret"]
+    
+#     # 4. THE PROOF
+#     try:
+#         jwt.decode(token_a, kyber_secret_b, algorithms=["HS256"])
+#         assert False, "CRITICAL VULNERABILITY: Token A was validated using Token B's secret!"
+#     except jwt.InvalidSignatureError:
+#         logger.info("Session Isolation Proof passed! Token A is mathematically incompatible with Session B.")

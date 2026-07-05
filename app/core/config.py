@@ -9,7 +9,7 @@ KYBER768_CIPHERTEXT_LENGTH = 1088
 #        --- SECURITY ---
 # ================================
 # In production, ALWAYS load this from environment variables
-SECRET_KEY = os.environ.get("SECRET_KEY", "super-secret-quantum-key-for-jwt-signing")
+# SECRET_KEY = os.environ.get("SECRET_KEY", "super-secret-quantum-key-for-jwt-signing") # Replaced with Kyber768 shared secret from session
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
