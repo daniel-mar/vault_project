@@ -19,4 +19,4 @@ This project is built to run entirely inside an isolated Docker container using 
 ## Testing
 Run the comprehensive test suite inside the container terminal:
 ```bash
-pytest -s tests/test_api.py
+pytest -s -v tests

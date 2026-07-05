@@ -44,11 +44,8 @@ def complete_pqc_handshake(
         with oqs.KeyEncapsulation("Kyber768", secret_key=session["secret_key"]) as server_kem:
             shared_secret = server_kem.decap_secret(ciphertext)
 
-        # Clean session on success
-        del SESSIONS[payload.session_id]
-
-        # Todo: use 'shared_secret' to generate a JWT or symmetric session key
-
+        # Instead of deleting session, save to later sign JWT in users.py /login
+        SESSIONS[payload.session_id]["shared_secret"] = shared_secret
 
         return HandshakeCompleteResponse(status="Secure Channel Established")
     
