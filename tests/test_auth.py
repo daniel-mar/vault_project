@@ -1,7 +1,7 @@
 # tests/test_auth.py
 import pytest
 import logging
-from tests.constants import USER_REGULAR, USER_ADMIN
+from tests.constants import USER_REGULAR_1, USER_ADMIN_1
 from tests.helpers import establish_kyber_session
 
 logger = logging.getLogger(__name__)
@@ -51,10 +51,22 @@ def test_handshake_invalid_session_id(client):
 
 
 def test_create_and_login_regular_user(client):
-    client.post("/api/v1/users/register", json=USER_REGULAR)
+
+    # Establish Quantum Tunnel first before sending data
     session_id = establish_kyber_session(client)
+    logger.info("=== PQC Tunnel Established ===")
+
+    # Attempt to create a user
+    client.post("/api/v1/users/register", json=USER_REGULAR_1)
+    logger.info("=== Created a new user ===")
+
+    # Attempt to login with newly created user
     res = client.post("/api/v1/users/login", data={
-        "username": USER_REGULAR["username"], "password": USER_REGULAR["password"], "session_id": session_id
+        "username": USER_REGULAR_1["username"],
+        "password": USER_REGULAR_1["password"],
+        "session_id": session_id
     })
+    print(res.json())
+    logger.info("=== Successfully logged in user w. Qauntum Tunnel ===")
+
     assert res.status_code == 200
-    logger.info("Regular user login success.")
