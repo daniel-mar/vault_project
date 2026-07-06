@@ -42,11 +42,15 @@ BOOK_A = {
     "author": "Alice Cryptography"
     }
 BOOK_B = {
-    "title": "Learning Angular 22",
+    "title": "Learning Angular",
     "author": "Bob Framework"
     }
 BOOK_A_UPDATE = {
     "author": "Alice C. Updated"
+    }
+BOOK_B_UPDATE = {
+    "title": "Learning Angular v22",
+    "author": "Bob Frame"
     }
 # ==========================================
 # --- TEST PAYLOADS & MESSAGES ---

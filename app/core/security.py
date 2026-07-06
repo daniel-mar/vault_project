@@ -4,12 +4,12 @@ import jwt, token
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
+from app.schemas.users_schemas import UserInDB
 from app.core.config import ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, USERS, SESSIONS
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/login")
-
 
 
 def get_password_hash(password: str):
@@ -27,7 +27,7 @@ def create_access_token(data: dict, signing_key: bytes):
     return encoded_jwt
 
 # -- Dependencies --
-def get_current_user(token: str = Depends(oauth2_scheme)):
+def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
     try:
         unverified_payload = jwt.decode(token, options={"verify_signature": False})
         session_id = unverified_payload.get("sid")
@@ -45,7 +45,11 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 
         if username is None or username not in USERS:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-        return {"username": username, "role": role, "token": token}
+        
+        return UserInDB(
+             username=username,
+             role=role
+        )
     
     except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail="Invalid token")

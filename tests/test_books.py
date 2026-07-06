@@ -1,52 +1,71 @@
-# import pytest
-# from test.helpers import establish_kyber_session
-# from test.constants import USER_REGULAR_1, USER_REGULAR_2, USER__REGULAR_3, USER_ADMIN_1, USER_ADMIN_2, USER_ADMIN_3, BOOK_A, BOOK_B, BOOK_A_UPDATE
+import pytest
+from tests.helpers import establish_kyber_session, auth_client_user, auth_client_admin
+from tests.constants import USER_REGULAR_1, USER_REGULAR_2, USER__REGULAR_3, USER_ADMIN_1, USER_ADMIN_2, USER_ADMIN_3, BOOK_A, BOOK_B, BOOK_A_UPDATE, BOOK_B_UPDATE
 
-# @pytest.fixture
-# def auth_client_user(client):
+
+@pytest.fixture(autouse=True)
+def clear_books():
+    from app.core.config import BOOKS
+    BOOKS.clear()
+
+# # ==========================================
+# # --- CREATE READ UPDATE DELETE ---
+# # ==========================================
+
+def test_create_book(auth_client_user):
+    
+    # Create a book
+    response_create_book = auth_client_user.post("/api/v1/books/create", json=BOOK_A)
+    assert response_create_book.status_code == 200
+
+    response_data = response_create_book.json()
+
+    book_id = response_data["id"]
+    book_owner = response_data["owner"]
+
+    print(f"***** Book ID: {book_id} *****")
+    print(f"***** Username of book creator: {book_owner} *****")
+    print(f"Book Response: {response_data}")
+
+    # Confirm creation of book within database
+    assert book_id == 1
+    assert book_owner == USER_REGULAR_1["username"]
+
+# def test_sequence_create_and_read(auth_client_user):
 #     """
-#     Flow: Quantum Tunnel -> Register -> Login -> Attach Token
+#     Logic: Create page and redirect to dashboard with all books.
 #     """
-#     # Establish PQC
-#     session_id = establish_kyber_session(client)
+#     # Create a book
+#     response_create_book = auth_client_user.post("/api/v1/books/create", json=BOOK_A)    
+#     assert response_create_book.status_code == 200
 
-#     # Register a user
-#     register_user_payload = USER_REGULAR_1.copy()
-#     register_user_payload["session_id"] = session_id
+#     response_data = response_create_book.json()
 
-#     client.post("/api/v1/users/register", json=register_user_payload)
+#     # Read created book(s) from database/memory
+#     response_read_book = auth_client_user.get("/api/v1/books/view")
+#     assert response_read_book.status_code == 200
+    
+#     # Iterate through books stored compare ID with saved response ID
+#     # Compare with saved response TITLE with constants title used to create book.
+#     books = response_read_book.json()
+#     assert any(b["id"] == response_data and b["title"] == BOOK_A["title"] for b in books)
 
-#     # Login with said user
-#     login_user_payload = {
-#         "username": USER_REGULAR_1["username"],
-#         "password": USER_REGULAR_1["password"],
-#         "session_id": session_id
-#     }
-#     # Generate Token
-#     token = client.post("/api/v1/users/login", data=login_user_payload).json()["access_token"]
 
-#     # Attach Token for subsequent requests
-#     client.headers.update({
-#         "Authorization": f"Bearer {token}"
-#     })
+# def test_sequence_create_read_update_read(auth_client_user):
 
-#     return client
+#     # Create book
+#     response_create = auth_client_user.post("/api/v1/books", json = BOOK_B)
+#     book_id = response_create.json()["id"]
 
-# @pytest.fixture
-# def auth_client_admin(client):
-#     session_id = establish_kyber_session(client)
+#     # Read book
+#     response_read_book = auth_client_user.get("/api/v1/books")
+#     assert any(b["id"] == book_id for b in response_read_book.json())
 
-#     register_admin_payload = USER_ADMIN_1.copy()
-#     register_admin_payload["session_id"] = session_id
+#     # Update book (author)
+#     response_update_book = auth_client_user.put(f"/api/v1/books/{book_id}", json = BOOK_B_UPDATE["author"])
+#     assert response_update_book == 200
 
-#     client.post("/api/v1/users/register", json=register_admin_payload)
-
-#     login_admin_payload = {
-#         "username": USER_ADMIN_1["username"],
-#         "password": USER_ADMIN_1["password"],
-#         "session_id": session_id
-#     }
-#     token = client.post("/api/v1/users/login", data=login_admin_payload).json()["access_token"]
-
-#     client .headers.update({"Authorization": f"Bearer {token}"})
-#     return client
+#     # Read updated book
+#     response_read_updated_book = auth_client_user.get("/api/v1/books")
+#     updated_book = next(b for b in response_read_updated_book.json() if b["id"] == book_id)
+#     assert updated_book["author"] == BOOK_B_UPDATE["author"]

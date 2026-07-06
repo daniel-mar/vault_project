@@ -2,7 +2,7 @@ from fastapi import FastAPI
 import logging
 
 # Import routers and handlers
-from app.api.routers import auth, verify, users
+from app.api.routers import auth, verify, users, books
 from app.core.exceptions import CryptographicError, crypto_exception_handler
 
 # Configure global logger (instead of printing)
@@ -19,6 +19,7 @@ app.add_exception_handler(CryptographicError, crypto_exception_handler)
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(verify.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
+app.include_router(books.router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn
